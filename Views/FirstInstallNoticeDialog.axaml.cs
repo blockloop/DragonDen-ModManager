@@ -45,9 +45,9 @@ public partial class FirstInstallDialog : Window
         SubTitleText.Text = string.IsNullOrWhiteSpace(modName) ? "" : "Review details before you continue";
         BodyText.Text = "Read the Forge page before installing.";
         BodyText2.Text = "Check requirements, incompatibilities, and install notes.";
-        CountdownText.Text = "Install available after opening the mod page";
-        InstallBtn.IsEnabled = false;
-        pageOpened = false;
+        CountdownText.Text = "You can install now";
+        InstallBtn.IsEnabled = true;
+        pageOpened = true;
     }
 
     private void OnClosing(object? sender, WindowClosingEventArgs e)

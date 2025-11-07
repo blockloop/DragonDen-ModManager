@@ -178,17 +178,6 @@ public class App : Application
 
             desktop.MainWindow.Opened += async (_, __) =>
             {
-                const string githubIssues = "https://github.com/Drexira/DragonDen-ModManager/issues";
-                const string discordInvite = "https://discord.gg/WelcomeToTarkov";
-                const string modPage = "https://forge.sp-tarkov.com/mod/2396/dragon-den-mod-manager";
-
-                var ok = await AlphaNoticeDialog.ShowAsync(desktop.MainWindow, githubIssues, discordInvite, modPage, CancellationToken.None);
-                if (!ok)
-                {
-                    desktop.Shutdown();
-                    return;
-                }
-
                 _warmCts = CancellationTokenSource.CreateLinkedTokenSource(ShutdownToken);
                 _warmTask = WarmCacheOnLaunch(_warmCts.Token);
             };
