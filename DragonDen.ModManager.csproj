@@ -26,7 +26,7 @@
 
     <PropertyGroup Condition="'$(Configuration)' == 'Release'">
         <RuntimeIdentifier>win-x64</RuntimeIdentifier>
-        <PublishSingleFile>true</PublishSingleFile>
+        <PublishSingleFile>false</PublishSingleFile>
         <SelfContained>true</SelfContained>
         <PublishTrimmed>true</PublishTrimmed>
         <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>

@@ -2,11 +2,11 @@ name: Build and Release
 
 on:
   push:
-    branches: [ Public ]
+    branches: [Public]
     tags:
-      - 'v*'
+      - "v*"
   pull_request:
-    branches: [ Public ]
+    branches: [Public]
   workflow_dispatch:
 
 jobs:
@@ -14,52 +14,52 @@ jobs:
     runs-on: windows-latest
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v4
-      with:
-        dotnet-version: '9.0.x'
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "9.0.x"
 
-    - name: Restore dependencies
-      run: dotnet restore --runtime win-x64
+      - name: Restore dependencies
+        run: dotnet restore --runtime win-x64
 
-    - name: Build
-      run: dotnet build --configuration Release --no-restore
+      - name: Build
+        run: dotnet build --configuration Release --no-restore
 
-    - name: Publish
-      run: dotnet publish --configuration Release --runtime win-x64 --no-build --output ./publish
+      - name: Publish
+        run: dotnet publish --configuration Release --runtime win-x64 --no-build --output ./publish
 
-    - name: Create build artifact
-      run: |
-        $version = Select-String -Path "DragonDen.ModManager.csproj" -Pattern '<Version>(.*?)</Version>' | ForEach-Object { $_.Matches.Groups[1].Value }
-        $artifactName = "DragonDen-ModManager-v$version-win-x64"
-        $date = Get-Date -Format "yyyyMMdd"
-        $sha = "${{ github.sha }}".Substring(0, 7)
-        $releaseName = "$date-$sha"
-        Compress-Archive -Path "./publish/*" -DestinationPath "./$artifactName.zip"
-        echo "ARTIFACT_NAME=$artifactName" >> $env:GITHUB_ENV
-        echo "VERSION=$version" >> $env:GITHUB_ENV
-        echo "RELEASE_NAME=$releaseName" >> $env:GITHUB_ENV
-      shell: pwsh
+      - name: Create build artifact
+        run: |
+          $version = Select-String -Path "DragonDen.ModManager.csproj" -Pattern '<Version>(.*?)</Version>' | ForEach-Object { $_.Matches.Groups[1].Value }
+          $artifactName = "DragonDen-ModManager-v$version-win-x64"
+          $date = Get-Date -Format "yyyyMMdd"
+          $sha = "${{ github.sha }}".Substring(0, 7)
+          $releaseName = "$date-$sha"
+          Compress-Archive -Path "./publish/*" -DestinationPath "./$artifactName.zip"
+          echo "ARTIFACT_NAME=$artifactName" >> $env:GITHUB_ENV
+          echo "VERSION=$version" >> $env:GITHUB_ENV
+          echo "RELEASE_NAME=$releaseName" >> $env:GITHUB_ENV
+        shell: pwsh
 
-    - name: Upload artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: ${{ env.ARTIFACT_NAME }}
-        path: ${{ env.ARTIFACT_NAME }}.zip
-        retention-days: 90
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.ARTIFACT_NAME }}
+          path: ${{ env.ARTIFACT_NAME }}.zip
+          retention-days: 90
 
-    - name: Create Release
-      if: github.event_name == 'push' && github.ref == 'refs/heads/Public'
-      uses: softprops/action-gh-release@v1
-      with:
-        tag_name: ${{ env.RELEASE_NAME }}
-        name: Release ${{ env.RELEASE_NAME }}
-        files: ${{ env.ARTIFACT_NAME }}.zip
-        draft: false
-        prerelease: false
-        generate_release_notes: true
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Create Release
+        if: github.event_name == 'push' && github.ref == 'refs/heads/Public'
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ env.RELEASE_NAME }}
+          name: Release ${{ env.RELEASE_NAME }}
+          files: ${{ env.ARTIFACT_NAME }}.zip
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
