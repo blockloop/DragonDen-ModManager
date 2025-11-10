@@ -1,4 +1,9 @@
-﻿<h1 align="center"><em>Dragon Den Mod Manager</em></h1>
+## FORK INFO ##
+I FORKED to remove annoying and _utterly pointless_ annoyances that the [original dev refuses to remove](https://github.com/Drexira/DragonDen-ModManager/issues/15#issuecomment-3475712460). Thanks for the great app. Fuck off with the annoyances
+
+This fork is updated frequently and builds are automatic in [GitHub Actions](https://github.com/blockloop/DragonDen-ModManager/releases). 
+ 
+<h1 align="center"><em>Dragon Den Mod Manager</em></h1>
 
 A mod manager for SPT mods built with Avalonia UI and .NET 9.  
 It indexes mods from Forge, lets users search/filter, and installs or uninstalls versions that match their SPT server.  
