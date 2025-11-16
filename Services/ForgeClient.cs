@@ -273,15 +273,21 @@ public static class ForgeClient
         return list;
     }
 
-    public static async Task<ModSummary?> GetModAsync(int modId, bool includeOwner = false, bool includeAuthors = false, bool includeCategory = true,
-        bool includeVersions = false, bool includeSourceLinks = false, CancellationToken ct = default)
+    public static async Task<ModSummary?> GetModAsync(
+        int modId,
+        bool includeOwner = false,
+        bool includeAuthors = false,
+        bool includeCategory = true,
+        bool includeVersions = false,
+        bool includeSourceLinks = false,
+        CancellationToken ct = default)
     {
         var includes = new List<string>();
-        if (includeOwner) includes.Add("owner");
-        if (includeAuthors) includes.Add("authors");
+
         if (includeCategory) includes.Add("category");
         if (includeVersions) includes.Add("versions");
         if (includeSourceLinks) includes.Add("source_code_links");
+
         var inc = includes.Count > 0 ? "?include=" + string.Join(",", includes) : "";
 
         var url = $"{BaseUrl}/api/v0/mod/{modId}{inc}";
@@ -314,9 +320,12 @@ public static class ForgeClient
             featured = el.GetPropertyAsBool("featured", false),
             contains_ads = el.GetPropertyAsBool("contains_ads", false),
             contains_ai_content = el.GetPropertyAsBool("contains_ai_content", false),
+            fika_compatibility = el.GetPropertyAsBool("fika_compatibility", false),
             versions = ParseVersions(el.TryGetProperty("versions", out var vEl) ? vEl : default),
             owner = ParsePerson(el.TryGetProperty("owner", out var ow) ? ow : default),
-            authors = ParsePersons(el.TryGetProperty("authors", out var au) ? au : default),
+            authors = el.TryGetProperty("additional_authors", out var auNew)
+                ? ParsePersons(auNew)
+                : (el.TryGetProperty("authors", out var auOld) ? ParsePersons(auOld) : null),
             category = ParseCategory(el.TryGetProperty("category", out var cat) ? cat : default),
             updated_at = upd,
             published_at = pub,
@@ -324,12 +333,19 @@ public static class ForgeClient
         };
     }
 
-    public static async Task<PagedMods> GetModsPageAsync(int page, int perPage, bool includeVersions, bool includeOwner, bool includeAuthors, bool includeCategory,
-        string query, string sortApi, bool includeSourceLinks = false, CancellationToken ct = default)
+    public static async Task<PagedMods> GetModsPageAsync(
+        int page,
+        int perPage,
+        bool includeVersions,
+        bool includeOwner,
+        bool includeAuthors,
+        bool includeCategory,
+        string query,
+        string sortApi,
+        bool includeSourceLinks = false,
+        CancellationToken ct = default)
     {
         var includes = new List<string>();
-        if (includeOwner) includes.Add("owner");
-        if (includeAuthors) includes.Add("authors");
         if (includeCategory) includes.Add("category");
         if (includeVersions) includes.Add("versions");
         if (includeSourceLinks) includes.Add("source_code_links");
@@ -370,9 +386,12 @@ public static class ForgeClient
                     featured = el.GetPropertyAsBool("featured", false),
                     contains_ads = el.GetPropertyAsBool("contains_ads", false),
                     contains_ai_content = el.GetPropertyAsBool("contains_ai_content", false),
+                    fika_compatibility = el.GetPropertyAsBool("fika_compatibility", false),
                     versions = ParseVersions(el.TryGetProperty("versions", out var vEl) ? vEl : default),
                     owner = ParsePerson(el.TryGetProperty("owner", out var ow) ? ow : default),
-                    authors = ParsePersons(el.TryGetProperty("authors", out var au) ? au : default),
+                    authors = el.TryGetProperty("additional_authors", out var auNew)
+                        ? ParsePersons(auNew)
+                        : (el.TryGetProperty("authors", out var auOld) ? ParsePersons(auOld) : null),
                     category = ParseCategory(el.TryGetProperty("category", out var cat) ? cat : default),
                     updated_at = upd,
                     published_at = pub,
@@ -535,6 +554,8 @@ public static class ForgeClient
                 SptVersionConstraint = v.GetPropertyOrDefault("spt_version_constraint", (string?)null),
                 Downloads = v.GetPropertyOrDefault("downloads", 0L),
                 PublishedAt = dto,
+                ContentLength = v.GetPropertyOrDefault("content_length", 0L),
+                FikaCompatibility = v.GetPropertyOrDefault("fika_compatibility", (string?)null),
                 Dependencies = null
             };
 
@@ -776,6 +797,8 @@ public static class ForgeClient
         public string? SptVersionConstraint { get; set; }
         public DateTimeOffset? PublishedAt { get; set; }
         public long Downloads { get; set; }
+        public long ContentLength { get; set; }
+        public string? FikaCompatibility { get; set; }
         public List<ModDependency>? Dependencies { get; set; }
     }
 
@@ -809,6 +832,7 @@ public static class ForgeClient
         public bool featured { get; set; }
         public bool contains_ads { get; set; }
         public bool contains_ai_content { get; set; }
+        public bool fika_compatibility { get; set; }
         public Person? owner { get; set; }
         public Person[]? authors { get; set; }
         public CategoryInfo? category { get; set; }

@@ -66,6 +66,8 @@ public partial class SettingsPage : UserControl
         ForgeTokenBox.Text = App.Config.Forge.Token ?? "";
         ShowTokenToggle.IsChecked = false;
         ToggleTokenVisibility(false);
+        
+        ExpertModeToggle.IsChecked = App.Config.UI.ExpertMode;
 
         UpdateComputed();
         UpdateSptDetectionStatus();
@@ -125,6 +127,18 @@ public partial class SettingsPage : UserControl
         {
             Notifications.Current.ShowError("Invalid Folder", "Selected SPT folder doesn't exist.");
             Logger.Error("[SettingsPage] Selected SPT folder doesn't exist: " + chosen);
+            return;
+        }
+
+        var eftExe = Path.Combine(chosen, "EscapeFromTarkov.exe");
+        var bepin = Path.Combine(chosen, "BepInEx");
+        if (!File.Exists(eftExe) || !Directory.Exists(bepin))
+        {
+            Notifications.Current.ShowError(
+                "Invalid SPT Folder",
+                "EscapeFromTarkov.exe and BepInEx folder must be in the selected folder."
+            );
+            Logger.Error("[SettingsPage] Invalid SPT folder: missing EscapeFromTarkov.exe or BepInEx in " + chosen);
             return;
         }
 
@@ -230,6 +244,7 @@ public partial class SettingsPage : UserControl
         App.Config.Paths.ClientModsRelative = ClientRelBox.Text ?? "BepInEx/plugins";
         App.Config.Paths.ServerModsRelative = ServerRelBox.Text ?? "SPT/user/mods";
         App.Config.Forge.Token = (ForgeTokenBox.Text ?? "").Trim();
+        App.Config.UI.ExpertMode = ExpertModeToggle.IsChecked == true;
 
         App.SaveConfig();
         App.RaiseConfigChanged();

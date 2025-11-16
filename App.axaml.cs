@@ -178,6 +178,7 @@ public class App : Application
 
             desktop.MainWindow.Opened += async (_, __) =>
             {
+                // Alpha dialog and mod page requirement removed per user request
                 _warmCts = CancellationTokenSource.CreateLinkedTokenSource(ShutdownToken);
                 _warmTask = WarmCacheOnLaunch(_warmCts.Token);
             };
@@ -193,7 +194,7 @@ public class App : Application
         {
             await Cache.RefreshAllAsync(null, ct);
         }
-        catch (OperationCanceledException e)
+        catch (OperationCanceledException)
         {
             // good girl action
         }

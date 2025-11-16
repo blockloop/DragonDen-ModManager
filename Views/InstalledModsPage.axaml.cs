@@ -10,6 +10,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.Primitives;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Threading;
@@ -125,6 +126,7 @@ public partial class InstalledModsPage : UserControl
 
     private async Task UpdateAll()
     {
+        if (SptProcessGuard.BlockIfRunning("Update all mods")) return;
         var mods = App.Db.ListMods().ToList();
         var queued = 0;
 
@@ -187,6 +189,7 @@ public partial class InstalledModsPage : UserControl
 
     private async Task DisableAllAsync()
     {
+        if (SptProcessGuard.BlockIfRunning("Disable all mods")) return;
         var rows = (ModsList.ItemsSource as IEnumerable<InstalledModRow>)?.ToList() ?? new();
         var targets = rows.Where(r => !r.IsDisabled && r.Versions?.Count > 0).ToList();
         if (targets.Count == 0)
@@ -211,6 +214,7 @@ public partial class InstalledModsPage : UserControl
 
     private async Task EnableAllAsync()
     {
+        if (SptProcessGuard.BlockIfRunning("Enable all mods")) return;
         var rows = (ModsList.ItemsSource as IEnumerable<InstalledModRow>)?.ToList() ?? new();
         var targets = rows.Where(r => r.IsDisabled).ToList();
 
@@ -241,6 +245,7 @@ public partial class InstalledModsPage : UserControl
         {
             if (b.Classes?.Contains("btn-trash") == true && b.Tag is InstalledModRow rowDisabledTrash)
             {
+                if (SptProcessGuard.BlockIfRunning("Remove mod")) return;
                 var owner = (Window?)TopLevel.GetTopLevel(this);
                 var dlg = new ConfirmUninstallDialog(rowDisabledTrash.Name);
                 var doIt = owner != null ? await dlg.ShowDialog<bool>(owner) : false;
@@ -261,6 +266,7 @@ public partial class InstalledModsPage : UserControl
 
         if (b.Classes?.Contains("btn-trash") == true && b.Tag is InstalledModRow rowTrash)
         {
+            if (SptProcessGuard.BlockIfRunning("Remove mod")) return;
             var owner = (Window?)TopLevel.GetTopLevel(this);
             var dlg = new ConfirmUninstallDialog(rowTrash.Name);
             var doIt = owner != null ? await dlg.ShowDialog<bool>(owner) : false;
@@ -446,6 +452,7 @@ public partial class InstalledModsPage : UserControl
 
     private async Task UninstallAllAsync()
     {
+        if (SptProcessGuard.BlockIfRunning("Uninstall all mods")) return;
         var rows = (ModsList.ItemsSource as IEnumerable<InstalledModRow>)?.ToList() ?? new();
         var targets = rows.Where(r => r.ModIds is { Count: > 0 }).ToList();
         if (targets.Count == 0)
@@ -779,11 +786,10 @@ public partial class InstalledModsPage : UserControl
                     ? sorted
                     : sorted.Where(v => string.Equals(ToABFromConstraint(v.SptVersionConstraint), detectedAB, StringComparison.OrdinalIgnoreCase))
                         .ToList();
-
                 var latestForAB = filtered.FirstOrDefault();
                 var latestVerText = latestForAB?.Version ?? "";
                 var canUpdate = latestForAB != null && !string.IsNullOrWhiteSpace(latestForAB.Version) && IsUpdate(installedVersion, latestForAB.Version!);
-
+                var fikaLabel = BuildFikaLabel(installedVersion, sorted, latestForAB);
                 var modIds = g.Select(x => x.mod_id).Distinct().ToList();
 
                 var isDisabled = false;
@@ -850,7 +856,8 @@ public partial class InstalledModsPage : UserControl
                     InstalledAtText = installedAt.HasValue ? installedAt.Value.LocalDateTime.ToString("yyyy-MM-dd HH:mm") : "",
                     LatestPublishedText = latestForAB?.PublishedAt.HasValue == true ? latestForAB!.PublishedAt!.Value.LocalDateTime.ToString("yyyy-MM-dd") : "",
                     HasEditableConfigs = hasEditableConfigs,
-                    IsDisabled = isDisabled
+                    IsDisabled = isDisabled,
+                    FikaLabel = fikaLabel
                 };
 
                 if (cacheRow != null && coldMap.ContainsKey(cacheRow.Id))
@@ -921,9 +928,9 @@ public partial class InstalledModsPage : UserControl
 
                 var latest = filtered.FirstOrDefault();
                 var row = coldMap[id];
-
                 var installedVersion = row.InstalledVersion ?? "0.0.0";
                 var canUpdate = latest != null && !string.IsNullOrWhiteSpace(latest.Version) && IsUpdate(installedVersion, latest.Version!);
+                var fikaLabel = BuildFikaLabel(installedVersion, sorted, latest);
 
                 Dispatcher.UIThread.Post(() =>
                 {
@@ -935,7 +942,10 @@ public partial class InstalledModsPage : UserControl
                     row.LatestVersionText = latest?.Version ?? "";
                     row.IsOutdated = !row.IsDisabled && canUpdate;
                     row.CanUpdate = !row.IsDisabled && canUpdate;
-                    row.LatestPublishedText = latest?.PublishedAt.HasValue == true ? latest!.PublishedAt!.Value.LocalDateTime.ToString("yyyy-MM-dd") : "";
+                    row.LatestPublishedText = latest?.PublishedAt.HasValue == true
+                        ? latest!.PublishedAt!.Value.LocalDateTime.ToString("yyyy-MM-dd")
+                        : "";
+                    row.FikaLabel = fikaLabel;
 
                     InsertSorted(visible, row, comparer);
                 });
@@ -982,9 +992,16 @@ public partial class InstalledModsPage : UserControl
         });
     }
 
-    private void OnToggleEnabled(object? s, RoutedEventArgs e)
+    private async void OnToggleEnabled(object? s, RoutedEventArgs e)
     {
         if (s is not CheckBox { Tag: InstalledModRow row } cb) return;
+
+        if (SptProcessGuard.BlockIfRunning("Toggle mod state"))
+        {
+            e.Handled = true;
+            await RefreshRows();
+            return;
+        }
 
         var shouldEnable = cb.IsChecked == true;
 
@@ -997,6 +1014,7 @@ public partial class InstalledModsPage : UserControl
     private void OnUpdateFromBadge(object? sender, RoutedEventArgs e)
     {
         if (sender is not Button b || b.Tag is not InstalledModRow row) return;
+        if (SptProcessGuard.BlockIfRunning("Update mod")) return;
 
         if (row.IsDisabled)
         {
@@ -1022,6 +1040,7 @@ public partial class InstalledModsPage : UserControl
     private async void OnOpenVersionModal(object? sender, RoutedEventArgs e)
     {
         if (sender is not Button b || b.Tag is not InstalledModRow row) return;
+        if (SptProcessGuard.BlockIfRunning("Change mod version")) return;
         if (row.IsDisabled)
         {
             Notifications.Current.ShowWarning("Mod Disabled", "Enable this mod before changing its version.");
@@ -1249,5 +1268,49 @@ public partial class InstalledModsPage : UserControl
         var trimmed = string.Join(Path.DirectorySeparatorChar.ToString(), relSegs);
         var combined = Path.Combine(baseRoot, trimmed);
         return Path.GetFullPath(combined);
+    }
+    
+    private static string NormalizeFika(string? raw)
+    {
+        if (string.IsNullOrWhiteSpace(raw)) return "unknown";
+        var s = raw.Trim().ToLowerInvariant();
+        return s switch
+        {
+            "compatible" => "compatible",
+            "incompatible" => "incompatible",
+            "unknown" => "unknown",
+            _ => "unknown"
+        };
+    }
+
+    private static string BuildFikaLabel(string installedVersion, List<ForgeClient.ModVersion> allVersions, ForgeClient.ModVersion? abLatest)
+    {
+        string kindInstalled = "unknown";
+
+        if (!string.IsNullOrWhiteSpace(installedVersion))
+        {
+            var match = allVersions.FirstOrDefault(v =>
+                string.Equals(v.Version ?? "", installedVersion, StringComparison.OrdinalIgnoreCase));
+
+            if (match != null)
+                kindInstalled = NormalizeFika(match.FikaCompatibility);
+        }
+
+        if (kindInstalled == "compatible") return "Fika compatible (installed)";
+        if (kindInstalled == "incompatible") return "Fika incompatible (installed)";
+
+        if (abLatest != null)
+        {
+            var kindLatest = NormalizeFika(abLatest.FikaCompatibility);
+            if (kindLatest == "compatible") return "Fika compatible (latest version)";
+            if (kindLatest == "incompatible") return "Fika incompatible (latest version)";
+        }
+
+        var anyCompat = allVersions.Any(v => NormalizeFika(v.FikaCompatibility) == "compatible");
+        if (anyCompat) return "Fika compatible (other version)";
+
+        if (allVersions.Count > 0) return "Fika status unknown";
+
+        return "";
     }
 }
