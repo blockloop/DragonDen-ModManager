@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Avalonia.Controls;
@@ -45,9 +45,9 @@ public partial class FirstInstallDialog : Window
         SubTitleText.Text = string.IsNullOrWhiteSpace(modName) ? "" : "Review details before you continue";
         BodyText.Text = "Read the Forge page before installing.";
         BodyText2.Text = "Check requirements, incompatibilities, and install notes.";
-        CountdownText.Text = "You can install now";
-        InstallBtn.IsEnabled = true;
-        pageOpened = true;
+        CountdownText.Text = "Install available after opening the mod page";
+        InstallBtn.IsEnabled = false;
+        pageOpened = false;
     }
 
     private void OnClosing(object? sender, WindowClosingEventArgs e)
