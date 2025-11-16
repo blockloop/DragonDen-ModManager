@@ -1,4 +1,4 @@
-﻿namespace DragonDen.ModManager.Utils;
+namespace DragonDen.ModManager.Utils;
 
 public class HTMLUtils
 {

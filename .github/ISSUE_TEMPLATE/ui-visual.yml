@@ -1,4 +1,4 @@
-﻿name: UI or Visual Issue
+name: UI or Visual Issue
 description: Layout, text, theme, or scaling problem
 labels: ["ui"]
 body:

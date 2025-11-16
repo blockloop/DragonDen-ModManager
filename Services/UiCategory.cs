@@ -1,4 +1,4 @@
-﻿namespace DragonDen.ModManager.Services;
+namespace DragonDen.ModManager.Services;
 
 public sealed class UiCategory
 {

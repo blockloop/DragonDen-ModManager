@@ -1,4 +1,4 @@
-﻿name: Crash
+name: Crash
 description: Mod Manager crashes or shows a fatal error
 labels: ["bug", "crash"]
 body:

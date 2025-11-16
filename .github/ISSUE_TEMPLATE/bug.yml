@@ -1,4 +1,4 @@
-﻿name: Bug
+name: Bug
 description: Something doesn't work the way it should
 labels: ["bug"]
 body:

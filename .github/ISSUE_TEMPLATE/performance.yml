@@ -1,4 +1,4 @@
-﻿name: Performance or Freeze
+name: Performance or Freeze
 description: Slow, stutter, high CPU, or hang
 labels: ["performance"]
 body:

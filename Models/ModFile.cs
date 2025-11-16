@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using DragonDen.ModManager.Services;
 
 namespace DragonDen.ModManager.Models;
